@@ -32,7 +32,10 @@ def test_register_and_login(client, app):
         'email': 'test@example.com',
         'company_name': 'TestCo',
         'password': 'password123',
-        'card_number': '4242-4242-4242-4242'
+        'card_brand': 'Visa',
+        'card_number': '4242-4242-4242-4242',
+        'expiry': '12/25',
+        'cvv': '123'
     }, follow_redirects=True)
 
     assert response.status_code == 200

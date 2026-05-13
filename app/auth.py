@@ -31,12 +31,19 @@ def register():
         password = request.form.get('password')
         card_number = request.form.get('card_number', '') # Mock payment
         card_brand = request.form.get('card_brand', 'Unknown')
+        expiry = request.form.get('expiry')
+        cvv = request.form.get('cvv')
 
         # Strip spaces/dashes
         clean_card = card_number.replace(' ', '').replace('-', '')
 
         if not luhn_check(clean_card):
             flash('Invalid credit card number', 'danger')
+            return redirect(url_for('auth.register'))
+
+        # Additional minimal check for expiry and cvv (mock checking)
+        if not expiry or not cvv:
+            flash('Expiry and CVV are required', 'danger')
             return redirect(url_for('auth.register'))
 
         user_exists = User.query.filter_by(email=email).first()
