@@ -4,169 +4,417 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - ServerSync</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue-router@4.2.5/dist/vue-router.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'midnight': '#0f172a', /* slate-900 */
+                        'electric-blue': '#3b82f6',
+                        'neon-mint': '#34d399',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.3s ease;
+        }
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+        }
+    </style>
 </head>
-<body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">ServerSync</a>
-            <div class="ms-auto text-white">
-                Welcome, {{ current_user.email }} | <a href="/logout" class="text-white">Logout</a>
+<body class="bg-midnight text-white min-h-screen font-sans">
+    <div id="app" class="flex flex-col min-h-screen">
+        <nav class="bg-slate-800 border-b border-slate-700">
+            <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+                <a class="text-2xl font-bold text-electric-blue" href="/">ServerSync</a>
+                <div class="text-gray-300">
+                    Welcome, {{ current_user.email }} | <a href="/logout" class="text-neon-mint hover:text-white transition duration-200">Logout</a>
+                </div>
             </div>
+        </nav>
+
+        <div class="flex flex-1">
+            <!-- Sidebar -->
+            <aside class="w-64 bg-slate-800 border-r border-slate-700 py-6 px-4 hidden md:block">
+                <ul class="space-y-2">
+                    <li><router-link to="/" class="block px-4 py-2 rounded text-gray-300 hover:bg-slate-700 hover:text-white" active-class="bg-slate-700 text-electric-blue font-bold">Dashboard</router-link></li>
+                    <li><router-link to="/account" class="block px-4 py-2 rounded text-gray-300 hover:bg-slate-700 hover:text-white" active-class="bg-slate-700 text-electric-blue font-bold">Account Dashboard</router-link></li>
+                    <li><router-link to="/pricing" class="block px-4 py-2 rounded text-gray-300 hover:bg-slate-700 hover:text-white" active-class="bg-slate-700 text-electric-blue font-bold">Pricing</router-link></li>
+                    <li><router-link to="/help" class="block px-4 py-2 rounded text-gray-300 hover:bg-slate-700 hover:text-white" active-class="bg-slate-700 text-electric-blue font-bold">Help & Legal</router-link></li>
+                </ul>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1 p-6 relative">
+                <!-- Mobile Nav -->
+                <div class="md:hidden flex space-x-4 mb-6 overflow-x-auto pb-2 border-b border-slate-700">
+                    <router-link to="/" class="whitespace-nowrap px-3 py-1 rounded text-sm text-gray-300" active-class="bg-slate-700 text-electric-blue">Dashboard</router-link>
+                    <router-link to="/account" class="whitespace-nowrap px-3 py-1 rounded text-sm text-gray-300" active-class="bg-slate-700 text-electric-blue">Account</router-link>
+                    <router-link to="/pricing" class="whitespace-nowrap px-3 py-1 rounded text-sm text-gray-300" active-class="bg-slate-700 text-electric-blue">Pricing</router-link>
+                    <router-link to="/help" class="whitespace-nowrap px-3 py-1 rounded text-sm text-gray-300" active-class="bg-slate-700 text-electric-blue">Help</router-link>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="mb-6">
+                        {% for category, message in messages %}
+                            <div class="p-4 rounded {% if category == 'danger' %}bg-red-500{% elif category == 'success' %}bg-neon-mint text-midnight{% else %}bg-electric-blue{% endif %} text-white mb-2">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <router-view v-slot="{ Component }">
+                    <transition name="fade" mode="out-in">
+                        <component :is="Component"></component>
+                    </transition>
+                </router-view>
+            </main>
         </div>
-    </nav>
+    </div>
 
-    <div class="container mt-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
+    <!-- Data passed from Flask to Vue -->
+    <script>
+        const initialData = {
+            servers: [
+                {% for server in servers %}
+                { hostname: "{{ server.hostname }}", ip_address: "{{ server.ip_address }}", provider: "{{ server.provider }}", status: "{{ server.status }}" },
                 {% endfor %}
-            {% endif %}
-        {% endwith %}
+            ],
+            apiKeys: [
+                {% for key in api_keys %}
+                { key: "{{ key.key }}" },
+                {% endfor %}
+            ],
+            auditLogs: [
+                {% for log in audit_logs %}
+                { action: "{{ log.action }}", timestamp: "{{ log.timestamp.strftime('%Y-%m-%d %H:%M') }}" },
+                {% endfor %}
+            ],
+            credit: {{ current_user.credit or 0 }},
+            subscriptionDate: "{{ current_user.subscription_date.strftime('%Y-%m-%d') if current_user.subscription_date else 'N/A' }}",
+            payments: [
+                {% for p in payments %}
+                { amount: "{{ p.amount }}", date: "{{ p.date.strftime('%Y-%m-%d %H:%M') }}", card_brand: "{{ p.card_brand }}", last_4: "{{ p.last_4 }}" },
+                {% endfor %}
+            ]
+        };
+    </script>
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        const { createRouter, createWebHashHistory } = VueRouter;
 
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card mb-4 shadow-sm">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Register New Server</h5>
+        {% raw %}
+// Components
+        const DashboardView = {
+            setup() {
+                const servers = ref(initialData.servers || []);
+                const apiKeys = ref(initialData.apiKeys || []);
+                const auditLogs = ref(initialData.auditLogs || []);
+
+                onMounted(() => {
+                    // Initialize Chart.js
+                    setTimeout(() => {
+                        const canvas = document.getElementById('usageChart');
+                        if(canvas) {
+                            const ctx = canvas.getContext('2d');
+                            new Chart(ctx, {
+                                type: 'bar',
+                                data: {
+                                    labels: ['Server 1', 'Server 2', 'Server 3'],
+                                    datasets: [{
+                                        label: 'CPU Usage (%)',
+                                        data: [45, 80, 25],
+                                        backgroundColor: 'rgba(59, 130, 246, 0.5)', // electric-blue
+                                        borderColor: 'rgba(59, 130, 246, 1)',
+                                        borderWidth: 1
+                                    },
+                                    {
+                                        label: 'RAM Usage (%)',
+                                        data: [60, 40, 90],
+                                        backgroundColor: 'rgba(52, 211, 153, 0.5)', // neon-mint
+                                        borderColor: 'rgba(52, 211, 153, 1)',
+                                        borderWidth: 1
+                                    }]
+                                },
+                                options: {
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            max: 100
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }, 100);
+                });
+
+                return { servers, apiKeys, auditLogs };
+            },
+            template: `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1 space-y-6">
+                        <!-- Register Server -->
+                        <div class="bg-slate-800 rounded-lg shadow-xl border border-slate-700 overflow-hidden">
+                            <div class="bg-electric-blue text-white px-4 py-3 font-bold">Register New Server</div>
+                            <div class="p-4">
+                                <form method="POST" action="/register_server">
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium mb-1">IP Address</label>
+                                        <input type="text" class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded focus:outline-none focus:border-electric-blue" name="ip_address" required>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium mb-1">Hostname</label>
+                                        <input type="text" class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded focus:outline-none focus:border-electric-blue" name="hostname" required>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium mb-1">Provider</label>
+                                        <input type="text" class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded focus:outline-none focus:border-electric-blue" name="provider" placeholder="e.g. AWS, DigitalOcean" required>
+                                    </div>
+                                    <button type="submit" class="w-full bg-neon-mint hover:bg-green-400 text-midnight font-bold py-2 px-4 rounded transition duration-200">Register Server</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Usage Chart -->
+                        <div class="bg-slate-800 rounded-lg shadow-xl border border-slate-700 overflow-hidden">
+                            <div class="bg-slate-700 text-white px-4 py-3 font-bold">Resource Usage (Mock)</div>
+                            <div class="p-4">
+                                <canvas id="usageChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- API Keys -->
+                        <div class="bg-slate-800 rounded-lg shadow-xl border border-slate-700 overflow-hidden">
+                            <div class="bg-slate-900 text-white px-4 py-3 font-bold">API Keys</div>
+                            <div class="p-4">
+                                <form method="POST" action="/generate_api_key">
+                                    <button type="submit" class="bg-slate-600 hover:bg-slate-500 text-white text-sm py-1 px-3 rounded mb-4 transition duration-200">Generate New Key</button>
+                                </form>
+                                <ul class="divide-y divide-slate-700">
+                                    <li v-for="k in apiKeys" :key="k.key" class="py-2 text-sm text-gray-300 break-all font-mono">{{ k.key }}</li>
+                                    <li v-if="apiKeys.length === 0" class="py-2 text-gray-500 text-sm">No API keys generated.</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <form method="POST" action="/register_server">
-                            <div class="mb-3">
-                                <label class="form-label">IP Address</label>
-                                <input type="text" class="form-control" name="ip_address" required>
+
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Managed Servers -->
+                        <div class="bg-slate-800 rounded-lg shadow-xl border border-slate-700 overflow-hidden">
+                            <div class="bg-slate-700 text-white px-4 py-3 font-bold">Managed Servers</div>
+                            <div class="p-0 overflow-x-auto">
+                                <table class="w-full text-left">
+                                    <thead class="bg-slate-900 border-b border-slate-700">
+                                        <tr>
+                                            <th class="px-4 py-3 text-sm font-semibold text-gray-300">Hostname</th>
+                                            <th class="px-4 py-3 text-sm font-semibold text-gray-300">IP Address</th>
+                                            <th class="px-4 py-3 text-sm font-semibold text-gray-300">Provider</th>
+                                            <th class="px-4 py-3 text-sm font-semibold text-gray-300">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-700">
+                                        <tr v-for="server in servers" :key="server.hostname" class="hover:bg-slate-750">
+                                            <td class="px-4 py-3 text-sm">{{ server.hostname }}</td>
+                                            <td class="px-4 py-3 text-sm">{{ server.ip_address }}</td>
+                                            <td class="px-4 py-3 text-sm">{{ server.provider }}</td>
+                                            <td class="px-4 py-3 text-sm flex items-center gap-2">
+                                                <span v-if="server.status === 'Up'" class="relative flex h-3 w-3">
+                                                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon-mint opacity-75"></span>
+                                                  <span class="relative inline-flex rounded-full h-3 w-3 bg-neon-mint"></span>
+                                                </span>
+                                                <span v-else class="h-3 w-3 rounded-full bg-red-500"></span>
+                                                <span :class="server.status === 'Up' ? 'text-neon-mint' : 'text-red-500'">{{ server.status }}</span>
+                                            </td>
+                                        </tr>
+                                        <tr v-if="servers.length === 0">
+                                            <td colspan="4" class="px-4 py-6 text-center text-gray-500">No servers registered yet.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Hostname</label>
-                                <input type="text" class="form-control" name="hostname" required>
+                        </div>
+
+                        <!-- Recent Activity -->
+                        <div class="bg-slate-800 rounded-lg shadow-xl border border-slate-700 overflow-hidden">
+                            <div class="bg-slate-700 text-white px-4 py-3 font-bold">Recent Activity (Audit Logs)</div>
+                            <div class="p-0">
+                                <ul class="divide-y divide-slate-700">
+                                    <li v-for="log in auditLogs" :key="log.timestamp" class="px-4 py-3 flex justify-between items-center">
+                                        <span class="text-sm text-gray-300">{{ log.action }}</span>
+                                        <span class="text-xs bg-slate-900 text-gray-400 px-2 py-1 rounded-full">{{ log.timestamp }}</span>
+                                    </li>
+                                    <li v-if="auditLogs.length === 0" class="px-4 py-6 text-center text-gray-500">No activity recorded.</li>
+                                </ul>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Provider</label>
-                                <input type="text" class="form-control" name="provider" placeholder="e.g. AWS, DigitalOcean" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100">Register Server</button>
-                        </form>
+                        </div>
                     </div>
                 </div>
+            `
+        };
 
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">Resource Usage (Mock)</h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="usageChart"></canvas>
-                    </div>
-                </div>
+        const PricingView = {
+            template: `
+                <div class="bg-slate-800 rounded-lg shadow-xl border border-slate-700 p-8 max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-bold mb-6 text-electric-blue text-center">Value Comparison</h2>
+                    <p class="text-gray-300 text-center mb-8">See how our $350/year flat rate saves you money compared to direct provider costs.</p>
 
-                <div class="card shadow-sm">
-                    <div class="card-header bg-dark text-white">
-                        <h5 class="mb-0">API Keys</h5>
-                    </div>
-                    <div class="card-body">
-                        <form method="POST" action="/generate_api_key">
-                            <button type="submit" class="btn btn-secondary btn-sm mb-3">Generate New Key</button>
-                        </form>
-                        <ul class="list-group list-group-flush">
-                            {% for key in api_keys %}
-                            <li class="list-group-item text-break" style="font-family: monospace;">{{ key.key }}</li>
-                            {% else %}
-                            <li class="list-group-item text-muted">No API keys generated.</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-8">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-secondary text-white">
-                        <h5 class="mb-0">Managed Servers</h5>
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-striped table-hover">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
                             <thead>
-                                <tr>
-                                    <th>Hostname</th>
-                                    <th>IP Address</th>
-                                    <th>Provider</th>
-                                    <th>Status</th>
+                                <tr class="bg-slate-900">
+                                    <th class="p-4 border border-slate-700 text-gray-300 font-semibold">Features</th>
+                                    <th class="p-4 border border-slate-700 text-neon-mint font-bold text-xl">ServerSync ($350/yr)</th>
+                                    <th class="p-4 border border-slate-700 text-gray-400 font-semibold">Direct Provider (Avg)</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for server in servers %}
                                 <tr>
-                                    <td>{{ server.hostname }}</td>
-                                    <td>{{ server.ip_address }}</td>
-                                    <td>{{ server.provider }}</td>
-                                    <td>
-                                        <span class="badge {% if server.status == 'Up' %}bg-success{% else %}bg-danger{% endif %}">
-                                            {{ server.status }}
-                                        </span>
-                                    </td>
+                                    <td class="p-4 border border-slate-700 text-gray-300">Server Management</td>
+                                    <td class="p-4 border border-slate-700 text-white font-semibold">Included (Unlimited)</td>
+                                    <td class="p-4 border border-slate-700 text-gray-400">$20 - $50 / server</td>
                                 </tr>
-                                {% else %}
+                                <tr class="bg-slate-800">
+                                    <td class="p-4 border border-slate-700 text-gray-300">Automated Billing Alerts</td>
+                                    <td class="p-4 border border-slate-700 text-white font-semibold">Included</td>
+                                    <td class="p-4 border border-slate-700 text-gray-400">Not typically included</td>
+                                </tr>
                                 <tr>
-                                    <td colspan="4" class="text-center">No servers registered yet.</td>
+                                    <td class="p-4 border border-slate-700 text-gray-300">API Access</td>
+                                    <td class="p-4 border border-slate-700 text-white font-semibold">Included</td>
+                                    <td class="p-4 border border-slate-700 text-gray-400">Additional fees may apply</td>
                                 </tr>
-                                {% endfor %}
+                                <tr class="bg-slate-900 font-bold text-lg">
+                                    <td class="p-4 border border-slate-700 text-electric-blue">Estimated Yearly Cost</td>
+                                    <td class="p-4 border border-slate-700 text-neon-mint">$350 Flat</td>
+                                    <td class="p-4 border border-slate-700 text-red-400">$600+</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
+            `
+        };
 
-                <div class="card shadow-sm mt-4">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">Recent Activity (Audit Logs)</h5>
+        const AccountView = {
+            setup() {
+                const creditBalance = ref(initialData.credit || 0.0);
+                const payments = ref(initialData.payments || []);
+                const subscriptionDate = ref(initialData.subscriptionDate || "");
+                return { creditBalance, payments, subscriptionDate };
+            },
+            template: `
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <h2 class="text-3xl font-bold mb-6 text-electric-blue">Account Dashboard</h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-slate-800 rounded-lg shadow-xl border border-slate-700 p-6">
+                            <h3 class="text-xl font-semibold mb-2 text-neon-mint">Current Credit Balance</h3>
+                            <p class="text-4xl font-bold text-white mb-2">\${{ creditBalance }}</p>
+                            <p class="text-sm text-gray-400">Available for future renewals or upgrades.</p>
+                        </div>
+
+                        <div class="bg-slate-800 rounded-lg shadow-xl border border-slate-700 p-6">
+                            <h3 class="text-xl font-semibold mb-2 text-white">Subscription Status</h3>
+                            <p class="text-lg text-neon-mint font-semibold mb-1">Active</p>
+                            <p class="text-sm text-gray-400">Subscribed since: {{ subscriptionDate }}</p>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <ul class="list-group list-group-flush">
-                            {% for log in audit_logs %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                {{ log.action }}
-                                <span class="badge bg-secondary rounded-pill">{{ log.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
-                            </li>
-                            {% else %}
-                            <li class="list-group-item text-muted">No activity recorded.</li>
-                            {% endfor %}
-                        </ul>
+
+                    <div class="bg-slate-800 rounded-lg shadow-xl border border-slate-700 overflow-hidden mt-8">
+                        <div class="bg-slate-700 text-white px-6 py-4 font-bold text-lg">Payment History</div>
+                        <div class="p-0 overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-900 border-b border-slate-700">
+                                    <tr>
+                                        <th class="px-6 py-3 text-sm font-semibold text-gray-300">Date</th>
+                                        <th class="px-6 py-3 text-sm font-semibold text-gray-300">Amount</th>
+                                        <th class="px-6 py-3 text-sm font-semibold text-gray-300">Card Info</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-700">
+                                    <tr v-for="p in payments" :key="p.date" class="hover:bg-slate-750">
+                                        <td class="px-6 py-4 text-sm text-gray-300">{{ p.date }}</td>
+                                        <td class="px-6 py-4 text-sm text-neon-mint font-semibold">\${{ p.amount }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-300">{{ p.card_brand }} ending in {{ p.last_4 }}</td>
+                                    </tr>
+                                    <tr v-if="payments.length === 0">
+                                        <td colspan="3" class="px-6 py-8 text-center text-gray-500">No payment history found.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
+            `
+        };
 
-    <script>
-        const ctx = document.getElementById('usageChart').getContext('2d');
-        const usageChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Server 1', 'Server 2', 'Server 3'],
-                datasets: [{
-                    label: 'CPU Usage (%)',
-                    data: [45, 80, 25],
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'RAM Usage (%)',
-                    data: [60, 40, 90],
-                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100
-                    }
-                }
-            }
+        const HelpView = {
+            template: `
+                <div class="bg-slate-800 rounded-lg shadow-xl border border-slate-700 p-8 max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-bold mb-6 text-electric-blue">Help & Legal</h2>
+
+                    <div class="space-y-8">
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-4 text-neon-mint border-b border-slate-700 pb-2">Frequently Asked Questions</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <h4 class="font-bold text-white mb-1">How do I register a new server?</h4>
+                                    <p class="text-gray-400 text-sm">Navigate to the Dashboard and use the "Register New Server" form on the left panel.</p>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-white mb-1">Is my credit card data secure?</h4>
+                                    <p class="text-gray-400 text-sm">Yes, we never store full credit card numbers or CVV codes. We only retain the card brand and the last 4 digits for receipt purposes.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-4 text-neon-mint border-b border-slate-700 pb-2">Terms of Service</h3>
+                            <p class="text-gray-400 text-sm">By using ServerSync, you agree to our terms... (Placeholder text for enterprise trust).</p>
+                        </div>
+
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-4 text-neon-mint border-b border-slate-700 pb-2">Privacy Policy</h3>
+                            <p class="text-gray-400 text-sm">Your privacy is our priority. We collect only what is necessary to operate the service... (Placeholder text for enterprise trust).</p>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+
+        // Router Setup
+        const routes = [
+            { path: '/', component: DashboardView },
+            { path: '/pricing', component: PricingView },
+            { path: '/account', component: AccountView },
+            { path: '/help', component: HelpView }
+        ];
+
+        const router = createRouter({
+            history: createWebHashHistory(),
+            routes
         });
-    </script>
+
+        // App Initialization
+        const app = createApp({});
+        app.use(router);
+        app.mount('#app');
+    {% endraw %}
+</script>
+
 </body>
 </html>

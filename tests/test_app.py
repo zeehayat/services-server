@@ -32,7 +32,7 @@ def test_register_and_login(client, app):
         'email': 'test@example.com',
         'company_name': 'TestCo',
         'password': 'password123',
-        'card_number': '1234-5678-9012-3456'
+        'card_number': '4242-4242-4242-4242'
     }, follow_redirects=True)
 
     assert response.status_code == 200

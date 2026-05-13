@@ -16,7 +16,16 @@ def dashboard():
     servers = Server.query.filter_by(user_id=current_user.id).all()
     audit_logs = AuditLog.query.filter_by(user_id=current_user.id).order_by(AuditLog.timestamp.desc()).limit(10).all()
     api_keys = APIKey.query.filter_by(user_id=current_user.id).all()
-    return render_template("dashboard.html", servers=servers, audit_logs=audit_logs, api_keys=api_keys)
+
+    # Getting payment data for account view
+    from app.models import Payment
+    payments = Payment.query.filter_by(user_id=current_user.id).order_by(Payment.date.desc()).all()
+
+    return render_template("dashboard.html",
+                           servers=servers,
+                           audit_logs=audit_logs,
+                           api_keys=api_keys,
+                           payments=payments)
 
 @main.route("/generate_api_key", methods=['POST'])
 @login_required

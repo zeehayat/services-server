@@ -37,5 +37,7 @@ class APIKey(db.Model):
 class Payment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     amount = db.Column(db.Float, nullable=False)
+    card_brand = db.Column(db.String(50), nullable=True)
+    last_4 = db.Column(db.String(4), nullable=True)
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
