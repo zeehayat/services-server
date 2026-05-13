@@ -35,6 +35,7 @@ class APIKey(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 class Payment(db.Model):
+    # Privacy: Ensure the Payment model only stores the Last 4 Digits and Brand.
     id = db.Column(db.Integer, primary_key=True)
     amount = db.Column(db.Float, nullable=False)
     card_brand = db.Column(db.String(50), nullable=True)

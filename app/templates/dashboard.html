@@ -49,8 +49,9 @@
                 <ul class="space-y-2">
                     <li><router-link to="/" class="block px-4 py-2 rounded text-gray-300 hover:bg-slate-700 hover:text-white" active-class="bg-slate-700 text-electric-blue font-bold">Dashboard</router-link></li>
                     <li><router-link to="/account" class="block px-4 py-2 rounded text-gray-300 hover:bg-slate-700 hover:text-white" active-class="bg-slate-700 text-electric-blue font-bold">Account Dashboard</router-link></li>
-                    <li><router-link to="/pricing" class="block px-4 py-2 rounded text-gray-300 hover:bg-slate-700 hover:text-white" active-class="bg-slate-700 text-electric-blue font-bold">Pricing</router-link></li>
-                    <li><router-link to="/help" class="block px-4 py-2 rounded text-gray-300 hover:bg-slate-700 hover:text-white" active-class="bg-slate-700 text-electric-blue font-bold">Help & Legal</router-link></li>
+                    <li><router-link to="/services" class="block px-4 py-2 rounded text-gray-300 hover:bg-slate-700 hover:text-white" active-class="bg-slate-700 text-electric-blue font-bold">Services</router-link></li>
+                    <li><router-link to="/about" class="block px-4 py-2 rounded text-gray-300 hover:bg-slate-700 hover:text-white" active-class="bg-slate-700 text-electric-blue font-bold">About Us</router-link></li>
+                    <li><router-link to="/help" class="block px-4 py-2 rounded text-gray-300 hover:bg-slate-700 hover:text-white" active-class="bg-slate-700 text-electric-blue font-bold">Help & FAQ</router-link></li>
                 </ul>
             </aside>
 
@@ -60,7 +61,8 @@
                 <div class="md:hidden flex space-x-4 mb-6 overflow-x-auto pb-2 border-b border-slate-700">
                     <router-link to="/" class="whitespace-nowrap px-3 py-1 rounded text-sm text-gray-300" active-class="bg-slate-700 text-electric-blue">Dashboard</router-link>
                     <router-link to="/account" class="whitespace-nowrap px-3 py-1 rounded text-sm text-gray-300" active-class="bg-slate-700 text-electric-blue">Account</router-link>
-                    <router-link to="/pricing" class="whitespace-nowrap px-3 py-1 rounded text-sm text-gray-300" active-class="bg-slate-700 text-electric-blue">Pricing</router-link>
+                    <router-link to="/services" class="whitespace-nowrap px-3 py-1 rounded text-sm text-gray-300" active-class="bg-slate-700 text-electric-blue">Services</router-link>
+                    <router-link to="/about" class="whitespace-nowrap px-3 py-1 rounded text-sm text-gray-300" active-class="bg-slate-700 text-electric-blue">About</router-link>
                     <router-link to="/help" class="whitespace-nowrap px-3 py-1 rounded text-sm text-gray-300" active-class="bg-slate-700 text-electric-blue">Help</router-link>
                 </div>
 
@@ -113,7 +115,7 @@
         };
     </script>
     <script>
-        const { createApp, ref, onMounted } = Vue;
+        const { createApp, ref, onMounted, computed } = Vue;
         const { createRouter, createWebHashHistory } = VueRouter;
 
         {% raw %}
@@ -310,6 +312,8 @@
         };
 
         const AccountView = {
+            // A private view pulling from the User and Payment models.
+            // Show the current credit balance and a table of previous $350 payments.
             setup() {
                 const creditBalance = ref(initialData.credit || 0.0);
                 const payments = ref(initialData.payments || []);
@@ -362,34 +366,129 @@
             `
         };
 
-        const HelpView = {
+        const AboutUsView = {
             template: `
                 <div class="bg-slate-800 rounded-lg shadow-xl border border-slate-700 p-8 max-w-4xl mx-auto">
-                    <h2 class="text-3xl font-bold mb-6 text-electric-blue">Help & Legal</h2>
+                    <h2 class="text-3xl font-bold mb-6 text-electric-blue">About Us</h2>
+                    <div class="space-y-6">
+                        <p class="text-lg text-gray-300 leading-relaxed">
+                            At ServerSync, we believe in providing the <strong class="text-neon-mint">"Best Value"</strong> infrastructure. Our mission is to bridge the gap between complex cloud pricing models and end-user simplicity.
+                        </p>
+                        <p class="text-gray-400">
+                            The cloud landscape is vast and often confusing. With varying prices, performance metrics, and hidden fees across different providers, finding the optimal solution can be a full-time job. We simplify this process by aggregating the best resources and offering them through a unified, transparent platform.
+                        </p>
+                        <div class="bg-slate-900 p-6 rounded-lg border border-slate-700 mt-6">
+                            <h3 class="text-xl font-semibold mb-2 text-white">Our Vision</h3>
+                            <p class="text-gray-400">To make high-performance, cost-effective cloud infrastructure accessible to everyone, without the management overhead.</p>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+
+        const ServicesView = {
+            template: `
+                <div class="max-w-4xl mx-auto space-y-8">
+                    <h2 class="text-3xl font-bold text-electric-blue text-center mb-10">Our Core Services</h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-slate-800 rounded-lg shadow-xl border border-slate-700 p-6 hover:border-electric-blue transition-colors duration-300">
+                            <div class="text-electric-blue mb-4">
+                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            </div>
+                            <h3 class="text-xl font-semibold mb-3 text-white">Cloud Management</h3>
+                            <p class="text-sm text-gray-400">A centralized dashboard for managing your multi-provider inventory. Monitor status, track usage, and manage your servers from a single pane of glass.</p>
+                        </div>
+
+                        <div class="bg-slate-800 rounded-lg shadow-xl border border-slate-700 p-6 hover:border-neon-mint transition-colors duration-300">
+                            <div class="text-neon-mint mb-4">
+                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            </div>
+                            <h3 class="text-xl font-semibold mb-3 text-white">Cloud Provisioning</h3>
+                            <p class="text-sm text-gray-400">Our intelligent "Best Value" routing engine automatically selects the optimal provider based on cost, latency requirements, and your workload needs.</p>
+                        </div>
+
+                        <div class="bg-slate-800 rounded-lg shadow-xl border border-slate-700 p-6 hover:border-purple-400 transition-colors duration-300">
+                            <div class="text-purple-400 mb-4">
+                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                            </div>
+                            <h3 class="text-xl font-semibold mb-3 text-white">Cloud Credit Handling</h3>
+                            <p class="text-sm text-gray-400">Automated $350/year subscription management with built-in "Pay-on-behalf" logic, ensuring you never face unexpected interruptions.</p>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+
+        const HelpView = {
+            setup() {
+                const searchQuery = ref('');
+
+                const faqs = [
+                    {
+                        question: "How do I register a new server?",
+                        answer: "Navigate to the Dashboard and use the 'Register New Server' form on the left panel. Enter the IP address, hostname, and select your provider from the dropdown. ServerSync will automatically track its status."
+                    },
+                    {
+                        question: "How do I gain SSH access to my provisioned servers?",
+                        answer: "SSH keys can be managed directly via your respective cloud provider's console. For enhanced security, ServerSync does not currently store or proxy SSH keys. Please ensure your local public key is added during the provisioning step or via your provider's interface."
+                    },
+                    {
+                        question: "How does billing work?",
+                        answer: "We charge a flat fee of $350/year. This covers your subscription to ServerSync's management platform. Depending on your configuration, provider costs may be paid on your behalf using the credits applied to your account. You can view your payment history and current credit balance in the Account Dashboard."
+                    },
+                    {
+                        question: "Is my credit card data secure?",
+                        answer: "Yes, we never store full credit card numbers or CVV codes. We only retain the card brand and the last 4 digits for receipt purposes. Validation occurs securely on the backend before the account is even created."
+                    }
+                ];
+
+                const filteredFaqs = computed(() => {
+                    if (!searchQuery.value) return faqs;
+                    const lowerQuery = searchQuery.value.toLowerCase();
+                    return faqs.filter(faq =>
+                        faq.question.toLowerCase().includes(lowerQuery) ||
+                        faq.answer.toLowerCase().includes(lowerQuery)
+                    );
+                });
+
+                return { searchQuery, filteredFaqs };
+            },
+            template: `
+                <div class="bg-slate-800 rounded-lg shadow-xl border border-slate-700 p-8 max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-bold mb-6 text-electric-blue">Help & FAQ</h2>
+
+                    <div class="mb-8 relative">
+                        <input type="text" v-model="searchQuery" placeholder="Search for help..."
+                            class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded text-white focus:outline-none focus:border-electric-blue placeholder-gray-400">
+                        <svg class="w-5 h-5 absolute right-4 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
 
                     <div class="space-y-8">
                         <div>
                             <h3 class="text-2xl font-semibold mb-4 text-neon-mint border-b border-slate-700 pb-2">Frequently Asked Questions</h3>
-                            <div class="space-y-4">
-                                <div>
-                                    <h4 class="font-bold text-white mb-1">How do I register a new server?</h4>
-                                    <p class="text-gray-400 text-sm">Navigate to the Dashboard and use the "Register New Server" form on the left panel.</p>
-                                </div>
-                                <div>
-                                    <h4 class="font-bold text-white mb-1">Is my credit card data secure?</h4>
-                                    <p class="text-gray-400 text-sm">Yes, we never store full credit card numbers or CVV codes. We only retain the card brand and the last 4 digits for receipt purposes.</p>
+
+                            <div v-if="filteredFaqs.length === 0" class="text-gray-400 text-center py-4">
+                                No results found for "{{ searchQuery }}".
+                            </div>
+
+                            <div class="space-y-6">
+                                <div v-for="(faq, index) in filteredFaqs" :key="index" class="bg-slate-750 p-4 rounded-lg border border-slate-700">
+                                    <h4 class="font-bold text-white mb-2 text-lg">{{ faq.question }}</h4>
+                                    <p class="text-gray-300 text-sm leading-relaxed">{{ faq.answer }}</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div>
-                            <h3 class="text-2xl font-semibold mb-4 text-neon-mint border-b border-slate-700 pb-2">Terms of Service</h3>
-                            <p class="text-gray-400 text-sm">By using ServerSync, you agree to our terms... (Placeholder text for enterprise trust).</p>
-                        </div>
-
-                        <div>
-                            <h3 class="text-2xl font-semibold mb-4 text-neon-mint border-b border-slate-700 pb-2">Privacy Policy</h3>
-                            <p class="text-gray-400 text-sm">Your privacy is our priority. We collect only what is necessary to operate the service... (Placeholder text for enterprise trust).</p>
+                        <div class="mt-12 pt-8 border-t border-slate-700 grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-semibold mb-3 text-electric-blue">Terms of Service</h3>
+                                <p class="text-gray-400 text-sm">By using ServerSync, you agree to our terms of service, which ensure a secure and reliable platform for all users.</p>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-semibold mb-3 text-electric-blue">Privacy Policy</h3>
+                                <p class="text-gray-400 text-sm">Your privacy is our priority. We collect only what is necessary to operate the service and never sell your data.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -401,6 +500,8 @@
             { path: '/', component: DashboardView },
             { path: '/pricing', component: PricingView },
             { path: '/account', component: AccountView },
+            { path: '/services', component: ServicesView },
+            { path: '/about', component: AboutUsView },
             { path: '/help', component: HelpView }
         ];
 
